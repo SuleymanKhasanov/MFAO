@@ -1,0 +1,7 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+bash check-branch-name.sh || (
+  echo '❌ Прерывание пуша из-за некорректного имени ветки.'
+  exit 1
+)
