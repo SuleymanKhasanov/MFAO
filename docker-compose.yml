@@ -1,19 +1,27 @@
-version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
+      context: ./ # Используем корень проекта как контекст
+      dockerfile: backend/Dockerfile
     ports:
-      - '3000:3000'
+      - '5050:5050' # Backend на порту 5050
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/barber_app
+      - DATABASE_URL=postgresql://user:password@db:5432/barber_app?schema=public
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - barber-network
   frontend:
     build:
-      context: ./frontend
+      context: ./ # Используем корень проекта как контекст
+      dockerfile: frontend/Dockerfile
     ports:
-      - '3001:3000'
+      - '3000:3000' # Frontend на порту 3000
+    depends_on:
+      - backend
+    networks:
+      - barber-network
   db:
     image: postgres:15
     environment:
@@ -23,6 +31,16 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - '5432:5432'
+      - '8080:5432' # PostgreSQL на порту 8080 хоста, 5432 в контейнере
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - barber-network
 volumes:
   postgres_data:
+networks:
+  barber-network:
+    driver: bridge
